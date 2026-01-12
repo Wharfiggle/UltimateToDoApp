@@ -9,7 +9,8 @@ export default class App extends React.Component
 		super(props);
 
 		this.state = {
-			tasks: []
+			tasks: [],
+			listHeight: 0
 		}
 	}
 
@@ -22,23 +23,45 @@ export default class App extends React.Component
 		this.setState({tasks: [{length:2}, {length:1}, {length:6}] });
 	}
 
+	handleListLayout = (e) => {
+		this.setState({ listHeight: e.nativeEvent.layout.height });
+	}
+
 	taskRender = ({item}) => {
-		return (<View style={[styles.task, {height:`${(item.length / 12) * 100}%`}]}>
-			<Text>{`${item.length}`}</Text>
-		</View>)
+		const total = this.state.tasks.reduce((s,t) => s + (t.length || 0), 0) || 1;
+		// If we have measured the list height, compute pixel height; otherwise fall back to flex
+		const height = this.state.listHeight ? (item.length / total) * this.state.listHeight : undefined;
+		const itemStyle = height ? { height } : { flex: item.length };
+
+		return (
+			<View style={[styles.task, itemStyle]}>
+				<Text>{`${item.length}`}</Text>
+			</View>
+		)
 	}
 
 	render()
 	{
-		return (<View style={styles.container}><View style={styles.subcontainer}>
-			<StatusBar></StatusBar>
-			<Text>Hi</Text>
-			<View style={{backgroundColor:"red", flex:1}}><FlatList
-				data={this.state.tasks}
-				renderItem={this.taskRender}
-				keyExtractor={(item, index) => index}
-			/></View></View>
-		</View>);
+		return (
+			<View style={styles.container}>
+				<View style={styles.subcontainer}>
+					<StatusBar />
+					<Text>Hi</Text>
+					<View
+						style={{backgroundColor:"red", flex:1}}
+						onLayout={this.handleListLayout}
+					>
+						<FlatList
+							data={this.state.tasks}
+							renderItem={this.taskRender}
+							keyExtractor={(item, index) => index.toString()}
+							style={{flex:1}}
+							contentContainerStyle={{flexGrow:1}}
+						/>
+					</View>
+				</View>
+			</View>
+		);
 	}
 }
 
@@ -60,6 +83,8 @@ const styles = StyleSheet.create({
 		width:300,
 		borderWidth:2,
 		borderColor:"black",
-		backgroundColor:"green"
+		backgroundColor:"green",
+		justifyContent:"center",
+		alignItems:"center"
 	}
 });
