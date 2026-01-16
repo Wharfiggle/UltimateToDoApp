@@ -23,18 +23,21 @@ export default class App extends React.Component
 		this.setState({tasks: [{length:2}, {length:1}, {length:6}] });
 	}
 
+	//called upon rendering task list
 	handleListLayout = (e) => {
 		this.setState({ listHeight: e.nativeEvent.layout.height });
 	}
 
 	taskRender = ({item}) => {
-		const total = this.state.tasks.reduce((s,t) => s + (t.length || 0), 0) || 1;
-		// If we have measured the list height, compute pixel height; otherwise fall back to flex
-		const height = this.state.listHeight ? (item.length / total) * this.state.listHeight : undefined;
-		const itemStyle = height ? { height } : { flex: item.length };
+		//get sum of all task lengths
+		const total = this.state.tasks.reduce((sum, task) => sum + task.length, 0);
+
+		var heightStyle = { flex: item.length };
+		if(this.state.listHeight != 0)
+			heightStyle = { height: (item.length / total) * this.state.listHeight };
 
 		return (
-			<View style={[styles.task, itemStyle]}>
+			<View style={[styles.task, heightStyle]}>
 				<Text>{`${item.length}`}</Text>
 			</View>
 		)
@@ -45,18 +48,13 @@ export default class App extends React.Component
 		return (
 			<View style={styles.container}>
 				<View style={styles.subcontainer}>
-					<StatusBar />
-					<Text>Hi</Text>
-					<View
-						style={{backgroundColor:"red", flex:1}}
-						onLayout={this.handleListLayout}
-					>
+					<StatusBar/>
+					<View style={{flex:1, borderWidth:2, borderColor:"black"}} onLayout={this.handleListLayout}>
 						<FlatList
 							data={this.state.tasks}
 							renderItem={this.taskRender}
-							keyExtractor={(item, index) => index.toString()}
-							style={{flex:1}}
-							contentContainerStyle={{flexGrow:1}}
+							keyExtractor={(item, index) => index}
+							ItemSeparatorComponent={(<View style={{height:2, backgroundColor:"black"}}></View>)}
 						/>
 					</View>
 				</View>
@@ -81,7 +79,6 @@ const styles = StyleSheet.create({
 	},
 	task:{
 		width:300,
-		borderWidth:2,
 		borderColor:"black",
 		backgroundColor:"green",
 		justifyContent:"center",
