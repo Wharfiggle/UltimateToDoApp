@@ -66,14 +66,17 @@ export default class App extends React.Component
 		)
 	}
 
-
+	testListener = (value) => {
+		console.log("LISTENED: " + value);
+	}
 	testModal = {
-		content: (mInfo) => { return ( <Button title="foo" onPress={mInfo.onComplete}/> ) },
-		onComplete: (mInfo) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
+		content: (actions) => { return ( <Button title="foo" onPress={()=>{actions.complete("fart")}}/> ) },
+		onComplete: (result) => { console.log(result); this.setState({ modalStack: this.state.modalStack.dropLast() }) },
+		listener: this.testListener
 	}
 	testModal2 = {
-		content: (mInfo) => { return ( <View style={{top:100}}><Button title="bar" onPress={mInfo.onComplete}/></View> ) },
-		onComplete: (mInfo) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
+		content: (actions) => { return ( <View style={{top:100}}><Button title="bar" onPress={()=>{actions.complete("bart")}}/></View> ) },
+		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
 	}
 
 	render()
