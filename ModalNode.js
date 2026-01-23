@@ -1,17 +1,16 @@
-import { View, Text } from "react-native";
+import { View } from "react-native";
 
 export default function ModalNode({
     style = {position:"absolute", alignItems:"center", justifyContent:"center"},
-    content = () => {},
-    onComplete = () => {},
-    onCancel = () => {},
-    next = null
+    node = null
 })
 {
+    if(!node)
+        return;
     return (
         <View style={style}>
-            { content({onComplete: onComplete}) }
-            { (next != null) && <ModalNode content={next.content} onComplete={next.onComplete}></ModalNode> }
+            { node.value.content(node.value) }
+            { (node.next != null) && <ModalNode node={node.next}/> }
         </View>
     );
 }

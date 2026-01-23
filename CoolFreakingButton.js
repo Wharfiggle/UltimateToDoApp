@@ -22,8 +22,8 @@ export default function CoolFreakingButton({
     disabledStyle = { ...style, backgroundColor:"#3B3B3B", ...disabledStyle };
     disabledIconStyle = { ...contentStyle, ...iconStyle, color:"#999999", ...disabledContentStyle, ...disabledIconStyle }
     disabledContentStyle = { ...contentStyle, color:"#999999", ...disabledContentStyle };
-    var finalContentStyle = [ contentStyle, disabled && disabledContentStyle ];
-    var finalIconStyle = [ contentStyle, iconStyle, disabled && disabledIconStyle ];
+    let finalContentStyle = [ contentStyle, disabled && disabledContentStyle ];
+    let finalIconStyle = [ contentStyle, iconStyle, disabled && disabledIconStyle ];
 
     return (
         <Pressable

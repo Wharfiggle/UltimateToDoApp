@@ -3,6 +3,7 @@ import { StyleSheet, Text, FlatList, View, Button } from "react-native";
 import CoolFreakingButton from "./CoolFreakingButton.js";
 import ModalNode from "./ModalNode.js";
 import React from "react";
+import LinkedList from "./LinkedList.js";
 
 export default class App extends React.Component
 {
@@ -14,7 +15,7 @@ export default class App extends React.Component
 			tasks: [],
 			listHeight: 0,
 			timeMarkerPos: 0,
-			modal: null
+			modalStack: new LinkedList()
 		}
 
 		this.timePeriod = {start: Date.now(), end: Date.now() + 1 * 12 * 1000}
@@ -22,15 +23,12 @@ export default class App extends React.Component
 		this.timeMarkerInterval = setInterval(this.timeMarkerUpdate, 1000);
 
 		setTimeout(resolve => {
-			var modal = this.testModal;
-			this.setState({ modal: modal });
+			this.setState({ modalStack: this.state.modalStack.push(this.testModal) });
 		}, 1000);
 
-		setTimeout(reaolve => {
-			var modal = this.state.modal;
-			modal.next = this.testModal2;
-			this.setState({modal: modal})
-		}, 2000)
+		setTimeout(resolve => {
+			this.setState({ modalStack: this.state.modalStack.push(this.testModal2) });
+		}, 2000);
 	}
 
 	componentWillUnmount()
@@ -48,7 +46,7 @@ export default class App extends React.Component
 	}
 
 	timeMarkerUpdate = () => {
-		var timeMarkerPos = this.state.listHeight * ((Date.now() - this.timePeriod.start) / (this.timePeriod.end - this.timePeriod.start));
+		let timeMarkerPos = this.state.listHeight * ((Date.now() - this.timePeriod.start) / (this.timePeriod.end - this.timePeriod.start));
 		timeMarkerPos = Math.max(0, Math.min(this.state.listHeight, timeMarkerPos));
 		this.setState({ timeMarkerPos: timeMarkerPos });
 	}
@@ -57,7 +55,7 @@ export default class App extends React.Component
 		//get sum of all task lengths
 		const total = this.state.tasks.reduce((sum, task) => sum + task.length, 0);
 
-		var taskStyle = styles.task;
+		let taskStyle = styles.task;
 		if(this.state.listHeight != 0)
 			taskStyle = {...taskStyle, height: (item.length / total) * this.state.listHeight };
 
@@ -70,17 +68,12 @@ export default class App extends React.Component
 
 
 	testModal = {
-		content: (args) => { return ( <Button title="foo" onPress={args.onComplete}></Button> ) },
-		onComplete: (args) => { this.setState({ modal: null }) },
-		next: this.testModal2
+		content: (mInfo) => { return ( <Button title="foo" onPress={mInfo.onComplete}/> ) },
+		onComplete: (mInfo) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
 	}
 	testModal2 = {
-		content: (args) => { return ( <View style={{top:100}}><Button title="bar" onPress={args.onComplete}></Button></View> ) },
-		onComplete: (args) => { 
-			var modal = this.state.modal;
-			modal.next = null;
-			this.setState({ modal: modal })
-		}
+		content: (mInfo) => { return ( <View style={{top:100}}><Button title="bar" onPress={mInfo.onComplete}/></View> ) },
+		onComplete: (mInfo) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
 	}
 
 	render()
@@ -99,11 +92,7 @@ export default class App extends React.Component
 						<View style={{position:"absolute", width: 100, top: this.state.timeMarkerPos - 1, height:2, backgroundColor:"red"}}></View>
 					</View>
 				</View>
-				{(this.state.modal != null) && <ModalNode
-					content = {this.state.modal.content}
-					onComplete = {this.state.modal.onComplete}
-					next = {this.state.modal.next}
-				></ModalNode>}
+				<ModalNode node = {this.state.modalStack.head}/>
 			</View>
 		);
 	}
