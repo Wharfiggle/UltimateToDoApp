@@ -1,5 +1,7 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, FlatList, View } from "react-native";
+import { StyleSheet, Text, FlatList, View, Button } from "react-native";
+import CoolFreakingButton from "./CoolFreakingButton.js";
+import ModalNode from "./ModalNode.js";
 import React from "react";
 
 export default class App extends React.Component
@@ -11,12 +13,24 @@ export default class App extends React.Component
 		this.state = {
 			tasks: [],
 			listHeight: 0,
-			timeMarkerPos: 0
+			timeMarkerPos: 0,
+			modal: null
 		}
 
 		this.timePeriod = {start: Date.now(), end: Date.now() + 1 * 12 * 1000}
 
 		this.timeMarkerInterval = setInterval(this.timeMarkerUpdate, 1000);
+
+		setTimeout(resolve => {
+			var modal = this.testModal;
+			this.setState({ modal: modal });
+		}, 1000);
+
+		setTimeout(reaolve => {
+			var modal = this.state.modal;
+			modal.next = this.testModal2;
+			this.setState({modal: modal})
+		}, 2000)
 	}
 
 	componentWillUnmount()
@@ -54,6 +68,21 @@ export default class App extends React.Component
 		)
 	}
 
+
+	testModal = {
+		content: (args) => { return ( <Button title="foo" onPress={args.onComplete}></Button> ) },
+		onComplete: (args) => { this.setState({ modal: null }) },
+		next: this.testModal2
+	}
+	testModal2 = {
+		content: (args) => { return ( <View style={{top:100}}><Button title="bar" onPress={args.onComplete}></Button></View> ) },
+		onComplete: (args) => { 
+			var modal = this.state.modal;
+			modal.next = null;
+			this.setState({ modal: modal })
+		}
+	}
+
 	render()
 	{
 		return (
@@ -70,6 +99,11 @@ export default class App extends React.Component
 						<View style={{position:"absolute", width: 100, top: this.state.timeMarkerPos - 1, height:2, backgroundColor:"red"}}></View>
 					</View>
 				</View>
+				{(this.state.modal != null) && <ModalNode
+					content = {this.state.modal.content}
+					onComplete = {this.state.modal.onComplete}
+					next = {this.state.modal.next}
+				></ModalNode>}
 			</View>
 		);
 	}
