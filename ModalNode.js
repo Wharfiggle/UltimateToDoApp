@@ -12,8 +12,7 @@ const cancel = (node) => {
 
 export default function ModalNode({
     style = defaultStyle,
-    node = null,
-    listener = null
+    node = null
 })
 {
     if(!node)

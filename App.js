@@ -1,9 +1,21 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, FlatList, View, Button } from "react-native";
+import { StyleSheet, Text, FlatList, View, Button, TextInput } from "react-native";
 import CoolFreakingButton from "./CoolFreakingButton.js";
 import ModalNode from "./ModalNode.js";
 import React from "react";
 import LinkedList from "./LinkedList.js";
+
+//class used to help with structuring modals for use in ModalNodes
+class Modal
+{
+	constructor(data, base)
+	{
+		this.content = data.content ? data.content : base.content; //render logic, passed actions: {complete(result), cancel()}
+		this.onComplete = data.onComplete ? data.onComplete : base.onComplete; //called and passed result from actions.complete(result)
+		this.onCancel = data.onCancel ? data.onCancel : base.onCancel; //called on actions.cancel()
+		this.listener = data.listener ? data.listener : base.listener; //meant to be set to a setter from React.useState(), called and passed result from actions.complete(result)
+	}
+}
 
 export default class App extends React.Component
 {
@@ -15,7 +27,7 @@ export default class App extends React.Component
 			tasks: [],
 			listHeight: 0,
 			timeMarkerPos: 0,
-			modalStack: new LinkedList()
+			modalStack: new LinkedList() //linked list of Modals for use in ModalNode
 		}
 
 		this.timePeriod = {start: Date.now(), end: Date.now() + 1 * 12 * 1000}
@@ -62,10 +74,17 @@ export default class App extends React.Component
 		)
 	}
 
-	testListener = (value) => {
-		console.log("LISTENED: " + value);
-	}
-	testModal = {
+
+	//Modal Node stuff
+
+	defaultModal = {
+		content: (actions) => {},
+		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
+		onCancel: () => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
+		listener: null
+	};
+	
+	testModal = new Modal({
 		content: (actions) => {
 			const [value, setValue] = React.useState(null);
 			return (
@@ -75,14 +94,25 @@ export default class App extends React.Component
 					this.setState({modalStack: this.state.modalStack.push(modal)})
 				}}>{!value ? "nothing" : value}</Text>
 			)
+		}
+	}, this.defaultModal);
+
+	testModal2 = new Modal({
+		content: (actions) => {
+			const [value, setValue] = React.useState(null);
+			return (
+				<View style={{top:-100}}>
+					<TextInput placeholder="type..." onChangeText={setValue}/>
+					<Button title="submit" onPress={()=>{actions.complete(value)}}/>
+				</View>
+			)
 		},
-		onComplete: (result) => { console.log(result); this.setState({ modalStack: this.state.modalStack.dropLast() }) },
-		listener: this.testListener
-	}
-	testModal2 = {
-		content: (actions) => { return ( <View style={{top:100}}><Button title="bar" onPress={()=>{actions.complete("bart")}}/></View> ) },
-		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) }
-	}
+		onComplete: (result) => {
+			console.log("booga: " + result);
+			this.defaultModal.onComplete(result);
+		}
+	}, this.defaultModal);
+
 
 	render()
 	{
