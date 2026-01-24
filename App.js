@@ -25,10 +25,6 @@ export default class App extends React.Component
 		setTimeout(resolve => {
 			this.setState({ modalStack: this.state.modalStack.push(this.testModal) });
 		}, 1000);
-
-		setTimeout(resolve => {
-			this.setState({ modalStack: this.state.modalStack.push(this.testModal2) });
-		}, 2000);
 	}
 
 	componentWillUnmount()
@@ -70,7 +66,16 @@ export default class App extends React.Component
 		console.log("LISTENED: " + value);
 	}
 	testModal = {
-		content: (actions) => { return ( <Button title="foo" onPress={()=>{actions.complete("fart")}}/> ) },
+		content: (actions) => {
+			const [value, setValue] = React.useState(null);
+			return (
+				<Text onPress={()=>{
+					let modal = this.testModal2;
+					modal.listener = setValue;
+					this.setState({modalStack: this.state.modalStack.push(modal)})
+				}}>{!value ? "nothing" : value}</Text>
+			)
+		},
 		onComplete: (result) => { console.log(result); this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		listener: this.testListener
 	}
