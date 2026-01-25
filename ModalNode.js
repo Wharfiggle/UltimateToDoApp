@@ -1,6 +1,7 @@
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 
-const defaultStyle = {position:"absolute", alignItems:"center", justifyContent:"center"};
+const style = {top:0, bottom:0, left:0, right:0,
+    position:"absolute", alignItems:"center", justifyContent:"center"};
 
 const complete = (result, node) => {
     node.value.onComplete?.(result);
@@ -11,7 +12,6 @@ const cancel = (node) => {
 }
 
 export default function ModalNode({
-    style = defaultStyle,
     node = null
 })
 {
@@ -23,6 +23,7 @@ export default function ModalNode({
 
     return (
         <View style={style}>
+            <View style={{...StyleSheet.absoluteFillObject, position:"absolute", opacity:0, backgroundColor:"red"}}/>
             { node.value.content({ complete: actionComplete, cancel: actionCancel }) }
             { (node.next != null) && <ModalNode node={node.next}/> }
         </View>

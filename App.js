@@ -70,9 +70,9 @@ export default class App extends React.Component
 		)
 	}
 
-	//todo make stretch to edge of screen, width and height: 100% doesnt work
 	darkBackground = (subcontent) => {
-		return (<View style={{alignItems:"center", justifyContent:"center", flex:1, position:"absolute", backgroundColor:"rgba(0,0,0,0.8)"}}>
+		return (<View style={{...StyleSheet.absoluteFillObject, position:"absolute",
+			alignItems:"center", justifyContent:"center", backgroundColor:"rgba(0,0,0,0.5)"}}>
 			{ subcontent }
 		</View>)
 	}
@@ -80,7 +80,7 @@ export default class App extends React.Component
 	//Modal Node stuff
 
 	defaultModal = {
-		content: (actions) => { return this.darkBackground() },
+		content: (actions) => { return this.darkBackground(<Text style={{color:"red"}}>default</Text>) },
 		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		onCancel: () => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		listener: null
@@ -103,9 +103,9 @@ export default class App extends React.Component
 		content: (actions) => {
 			const [value, setValue] = React.useState(null);
 			return (
-				<View style={{top:-100}}>
-					<TextInput placeholder="type..." onChangeText={setValue}/>
-					<Button title="submit" onPress={()=>{actions.complete(value)}}/>
+				<View style={{top:-200, backgroundColor:"white", borderRadius:10, margin:10}}>
+					<TextInput style={{width:100}} placeholder="type..." onChangeText={setValue}/>
+					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={()=>{actions.complete(value)}}/>
 				</View>
 			)
 		},
