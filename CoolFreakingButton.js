@@ -17,8 +17,8 @@ export default function CoolFreakingButton({
     disabledIconStyle
 })
 {
-    style = { backgroundColor:"#1DB954", justifyContent:"center", alignItems:"center", padding:5, borderRadius:3, ...style };
-    contentStyle = { includeFontPadding: false, color:"white", fontFamily:"InterMedium", fontWeight:"500", fontSize:16, ...contentStyle };
+    style = { backgroundColor:"white", justifyContent:"center", alignItems:"center", padding:5, borderRadius:3, ...style };
+    contentStyle = { includeFontPadding: false, color:"black", fontFamily:"InterMedium", fontWeight:"500", fontSize:16, ...contentStyle };
     disabledStyle = { ...style, backgroundColor:"#3B3B3B", ...disabledStyle };
     disabledIconStyle = { ...contentStyle, ...iconStyle, color:"#999999", ...disabledContentStyle, ...disabledIconStyle }
     disabledContentStyle = { ...contentStyle, color:"#999999", ...disabledContentStyle };

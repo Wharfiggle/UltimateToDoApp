@@ -33,10 +33,6 @@ export default class App extends React.Component
 		this.timePeriod = {start: Date.now(), end: Date.now() + 1 * 12 * 1000}
 
 		this.timeMarkerInterval = setInterval(this.timeMarkerUpdate, 1000);
-
-		setTimeout(resolve => {
-			this.setState({ modalStack: this.state.modalStack.push(this.testModal) });
-		}, 1000);
 	}
 
 	componentWillUnmount()
@@ -74,11 +70,17 @@ export default class App extends React.Component
 		)
 	}
 
+	//todo make stretch to edge of screen, width and height: 100% doesnt work
+	darkBackground = (subcontent) => {
+		return (<View style={{alignItems:"center", justifyContent:"center", flex:1, position:"absolute", backgroundColor:"rgba(0,0,0,0.8)"}}>
+			{ subcontent }
+		</View>)
+	}
 
 	//Modal Node stuff
 
 	defaultModal = {
-		content: (actions) => {},
+		content: (actions) => { return this.darkBackground() },
 		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		onCancel: () => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		listener: null
@@ -87,13 +89,13 @@ export default class App extends React.Component
 	testModal = new Modal({
 		content: (actions) => {
 			const [value, setValue] = React.useState(null);
-			return (
+			return ( this.darkBackground(
 				<Text onPress={()=>{
 					let modal = this.testModal2;
 					modal.listener = setValue;
 					this.setState({modalStack: this.state.modalStack.push(modal)})
 				}}>{!value ? "nothing" : value}</Text>
-			)
+			) )
 		}
 	}, this.defaultModal);
 
@@ -129,6 +131,8 @@ export default class App extends React.Component
 						/>
 						<View style={{position:"absolute", width: 100, top: this.state.timeMarkerPos - 1, height:2, backgroundColor:"red"}}></View>
 					</View>
+					<CoolFreakingButton iconAwesome="plus" contentStyle={{fontSize:24}} style={{height:50, width:50, borderRadius:50, borderWidth:2}} 
+						onPress={()=>{ this.setState({modalStack: this.state.modalStack.push(this.testModal)}) }}/>
 				</View>
 				<ModalNode node = {this.state.modalStack.head}/>
 			</View>
