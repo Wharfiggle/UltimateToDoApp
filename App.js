@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, FlatList, View, Button, TextInput } from "react-native";
+import { StyleSheet, Text, FlatList, View, TouchableOpacity, TextInput } from "react-native";
 import CoolFreakingButton from "./CoolFreakingButton.js";
 import ModalNode from "./ModalNode.js";
 import React from "react";
@@ -86,32 +86,65 @@ export default class App extends React.Component
 		listener: null
 	};
 	
-	testModal = new Modal({
+	newTaskModal = new Modal({
 		content: (actions) => {
-			const [value, setValue] = React.useState(null);
+			const [startTime, setStartTime] = React.useState();
+			const [endTime, setEndTime] = React.useState();
 			return ( this.darkBackground(
-				<Text onPress={()=>{
-					let modal = this.testModal2;
-					modal.listener = setValue;
-					this.setState({modalStack: this.state.modalStack.push(modal)})
-				}}>{!value ? "nothing" : value}</Text>
+				<View style={{width:250, height:200, padding:32, backgroundColor:"white", borderRadius:20, gap:16}}>
+					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setStartTime })}) } }>
+						<Text>Start time: </Text>
+						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!startTime ? "--:--" : `${startTime.hour}:${startTime.minute} ${startTime.ampm}`}</Text></View>
+					</TouchableOpacity>
+					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setEndTime })}) } }>
+						<Text>End time: </Text>
+						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!endTime ? "--:--" : `${endTime.hour}:${endTime.minute} ${endTime.ampm}`}</Text></View>
+					</TouchableOpacity>
+				</View>
 			) )
 		}
 	}, this.defaultModal);
 
-	testModal2 = new Modal({
+	formatStateNumber = (value, setter, min, max, pad = false) => {
+		let num = parseInt(value);
+		if(isNaN(value) || value < min)
+			num = min;
+		else if(num > max)
+			num = max;
+		const result = !pad ? String(num) : String(num).padStart(2, '0');
+		setter(result);
+		return result;
+	};
+
+	//modal for picking a time of the day
+	timePickerModal = new Modal({
 		content: (actions) => {
-			const [value, setValue] = React.useState(null);
+			const [hour, setHour] = React.useState("12");
+			const [minute, setMinute] = React.useState("00");
+			const [ampm, setAmpm] = React.useState("AM");
+			const hourBlur = () => { return this.formatStateNumber(hour, setHour, 1, 12) };
+			const minuteBlur = () => { return this.formatStateNumber(minute, setMinute, 0, 59, true) };
+			const ampmBlur = () => {
+				const result = ampm.toLowerCase() == "pm" ? "PM" : "AM";
+				setAmpm(result);
+				return result;
+			};
 			return (
-				<View style={{top:-200, backgroundColor:"white", borderRadius:10, margin:10}}>
-					<TextInput style={{width:100}} placeholder="type..." onChangeText={setValue}/>
-					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={()=>{actions.complete(value)}}/>
+				<View style={{top:-200, backgroundColor:"white", borderRadius:10, padding:10, gap:10}}>
+					<View style={{flexDirection:"row"}}>
+						<TextInput style={{width:40}} value={hour} onBlur={hourBlur} maxLength={2} keyboardType="numeric" onChangeText={setHour}/>
+						<Text>:</Text>
+						<TextInput style={{width:40}} value={minute} onBlur={minuteBlur} maxLength={2} keyboardType="numeric" onChangeText={setMinute}/>
+						<Text> </Text>
+						<TextInput style={{width:40}} value={ampm} onBlur={ampmBlur} maxLength={2} onChangeText={setAmpm}/>
+					</View>
+					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={ () => {
+						actions.complete({hour: hourBlur(), minute: minuteBlur(), ampm: ampmBlur()})
+					} }/>
 				</View>
 			)
-		},
-		onComplete: (result) => {
-			console.log("booga: " + result);
-			this.defaultModal.onComplete(result);
 		}
 	}, this.defaultModal);
 
@@ -132,7 +165,7 @@ export default class App extends React.Component
 						<View style={{position:"absolute", width: 100, top: this.state.timeMarkerPos - 1, height:2, backgroundColor:"red"}}></View>
 					</View>
 					<CoolFreakingButton iconAwesome="plus" contentStyle={{fontSize:24}} style={{height:50, width:50, borderRadius:50, borderWidth:2}} 
-						onPress={()=>{ this.setState({modalStack: this.state.modalStack.push(this.testModal)}) }}/>
+						onPress={()=>{ this.setState({modalStack: this.state.modalStack.push(this.newTaskModal)}) }}/>
 				</View>
 				<ModalNode node = {this.state.modalStack.head}/>
 			</View>
