@@ -14,6 +14,7 @@ class Modal
 		this.onComplete = data.onComplete ? data.onComplete : base.onComplete; //called and passed result from actions.complete(result)
 		this.onCancel = data.onCancel ? data.onCancel : base.onCancel; //called on actions.cancel()
 		this.listener = data.listener ? data.listener : base.listener; //meant to be set to a setter from React.useState(), called and passed result from actions.complete(result)
+		this.inputs = data.inputs ? data.inputs : base.inputs; //object, pass misc data to modal like default values
 	}
 }
 
@@ -80,25 +81,26 @@ export default class App extends React.Component
 	//Modal Node stuff
 
 	defaultModal = {
-		content: (actions) => { return this.darkBackground(<Text style={{color:"red"}}>default</Text>) },
+		content: (actions, inputs) => { return this.darkBackground(<Text style={{color:"red"}}>default</Text>) },
 		onComplete: (result) => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
 		onCancel: () => { this.setState({ modalStack: this.state.modalStack.dropLast() }) },
-		listener: null
+		listener: null,
+		inputs: {}
 	};
 	
 	newTaskModal = new Modal({
 		content: (actions) => {
-			const [startTime, setStartTime] = React.useState();
-			const [endTime, setEndTime] = React.useState();
+			const [startTime, setStartTime] = React.useState({hour:"9", minute:"00", ampm:"AM"});
+			const [endTime, setEndTime] = React.useState({hour:"5", minute:"00", ampm:"PM"});
 			return ( this.darkBackground(
 				<View style={{width:250, height:200, padding:32, backgroundColor:"white", borderRadius:20, gap:16}}>
 					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setStartTime })}) } }>
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setStartTime, inputs: startTime })}) } }>
 						<Text>Start time: </Text>
 						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!startTime ? "--:--" : `${startTime.hour}:${startTime.minute} ${startTime.ampm}`}</Text></View>
 					</TouchableOpacity>
 					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setEndTime })}) } }>
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setEndTime, inputs: endTime })}) } }>
 						<Text>End time: </Text>
 						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!endTime ? "--:--" : `${endTime.hour}:${endTime.minute} ${endTime.ampm}`}</Text></View>
 					</TouchableOpacity>
@@ -107,41 +109,35 @@ export default class App extends React.Component
 		}
 	}, this.defaultModal);
 
-	formatStateNumber = (value, setter, min, max, pad = false) => {
+	formatNumString = (value, min, max, pad = false) => {
 		let num = parseInt(value);
-		if(isNaN(value) || value < min)
+		if(isNaN(num) || num < min)
 			num = min;
 		else if(num > max)
 			num = max;
-		const result = !pad ? String(num) : String(num).padStart(2, '0');
-		setter(result);
-		return result;
+		return !pad ? String(num) : String(num).padStart(2, '0');
 	};
 
 	//modal for picking a time of the day
 	timePickerModal = new Modal({
-		content: (actions) => {
-			const [hour, setHour] = React.useState("12");
-			const [minute, setMinute] = React.useState("00");
-			const [ampm, setAmpm] = React.useState("AM");
-			const hourBlur = () => { return this.formatStateNumber(hour, setHour, 1, 12) };
-			const minuteBlur = () => { return this.formatStateNumber(minute, setMinute, 0, 59, true) };
-			const ampmBlur = () => {
-				const result = ampm.toLowerCase() == "pm" ? "PM" : "AM";
-				setAmpm(result);
-				return result;
-			};
+		content: (actions, inputs) => {
+			const [hour, setHour] = React.useState(inputs.hour);
+			const [minute, setMinute] = React.useState(inputs.minute);
+			const [ampm, setAmpm] = React.useState(inputs.ampm);
+			const formatHour = () => { return this.formatNumString(hour, 1, 12) };
+			const formatMinute = () => { return this.formatNumString(minute, 0, 59, true) };
+			const formatAmpm = () => { return ampm.toLowerCase() == "pm" ? "PM" : "AM" };
 			return (
 				<View style={{top:-200, backgroundColor:"white", borderRadius:10, padding:10, gap:10}}>
-					<View style={{flexDirection:"row"}}>
-						<TextInput style={{width:40}} value={hour} onBlur={hourBlur} maxLength={2} keyboardType="numeric" onChangeText={setHour}/>
+					<View style={{flexDirection:"row", alignItems:"center"}}>
+						<TextInput style={{width:25}} value={hour} onBlur={ ()=>{setHour(formatHour())} } maxLength={2} keyboardType="numeric" onChangeText={setHour}/>
 						<Text>:</Text>
-						<TextInput style={{width:40}} value={minute} onBlur={minuteBlur} maxLength={2} keyboardType="numeric" onChangeText={setMinute}/>
+						<TextInput style={{width:25}} value={minute} onBlur={ ()=>{setMinute(formatMinute())} } maxLength={2} keyboardType="numeric" onChangeText={setMinute}/>
 						<Text> </Text>
-						<TextInput style={{width:40}} value={ampm} onBlur={ampmBlur} maxLength={2} onChangeText={setAmpm}/>
+						<TextInput style={{width:30}} value={ampm} onBlur={ ()=>{setAmpm(formatAmpm())} } maxLength={2} onChangeText={setAmpm}/>
 					</View>
 					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={ () => {
-						actions.complete({hour: hourBlur(), minute: minuteBlur(), ampm: ampmBlur()})
+						actions.complete({hour: formatHour(), minute: formatMinute(), ampm: formatAmpm()})
 					} }/>
 				</View>
 			)

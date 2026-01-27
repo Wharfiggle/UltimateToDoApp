@@ -24,7 +24,7 @@ export default function ModalNode({
     return (
         <View style={style}>
             <View style={{...StyleSheet.absoluteFillObject, position:"absolute", opacity:0, backgroundColor:"red"}}/>
-            { node.value.content({ complete: actionComplete, cancel: actionCancel }) }
+            { node.value.content({ complete: actionComplete, cancel: actionCancel }, node.value.inputs) }
             { (node.next != null) && <ModalNode node={node.next}/> }
         </View>
     );
