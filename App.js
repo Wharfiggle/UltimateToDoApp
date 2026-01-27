@@ -5,6 +5,7 @@ import ModalNode from "./ModalNode.js";
 import React from "react";
 import LinkedList from "./LinkedList.js";
 
+
 //class used to help with structuring modals for use in ModalNodes
 class Modal
 {
@@ -17,6 +18,106 @@ class Modal
 		this.inputs = data.inputs ? data.inputs : base.inputs; //object, pass misc data to modal like default values
 	}
 }
+
+
+//group of classes used to constrain time inputs to be valid
+class Hour
+{
+	constructor(value)
+	{
+		this.value = parseInt(value);
+		if(isNaN(this.value) || this.value < 1)
+			this.value = 1;
+		else if(this.value > 12)
+			this.value = 12;
+	}
+	valueOf() { return this.value; }
+	toString() { return String(this.value); }
+}
+class Minute
+{
+	constructor(value)
+	{
+		this.value = parseInt(value);
+		if(isNaN(this.value) || this.value < 0)
+			this.value = 0;
+		else if(this.value > 59)
+			this.value = 59;
+	}
+	valueOf() { return this.value; }
+	toString() { return String(this.value).padStart(2, '0'); }
+}
+class Ampm
+{
+	constructor(str)
+	{ this.value = str.toLowerCase() != "pm" ? "AM" : "PM"; }
+	toString() { return this.value; }
+}
+
+
+//time of day ex: 9:00 AM, 5:00 PM
+class Time
+{
+	constructor(hour, minute, ampm, totalSecs = null)
+	{
+		this.hour = new Hour(hour);
+		this.minute = new Minute(minute);
+		this.ampm = new Ampm(ampm);
+		if(totalSecs != null)
+			this.totalSecs = totalSecs;
+		else
+			this.totalSecs = (hour == 12 && ampm == "AM" ? 0 : hour * 3600)
+				+ (minute * 60)
+				+ (ampm == "PM" && hour != 12 ? 43200 : 0);
+	}
+
+	toString()
+	{ return `${this.hour}:${String(this.minute).padStart(2, '0')} ${this.ampm}` }
+	
+	valueOf()
+	{ return this.totalSecs }
+}
+//alternate Time constructor
+function TimeFromSecs(totalSecs)
+{
+	let hour = totalSecs / 3600;
+	let ampm = hour >= 12 ? "PM" : "AM";
+	hour = (hour % 12) || 12;
+	let minute = (totalSecs % 3600) / 60;
+	return new Time(hour, minute, ampm, totalSecs);
+}
+
+
+//start Time and end Time within a day, ex: 9:00 AM - 5:00 PM
+class TimePeriod
+{
+	constructor(start, end)
+	{
+		this.start = start;
+		this.end = end;
+		if(start > end)
+		{
+			this.start = end;
+			this.end = start;
+		}
+		this.length = this.end - this.start;
+	}
+
+	toString()
+	{ return this.start + " - " + this.end }
+	
+	valueOf()
+	{ return this.length }
+}
+
+//gets the current amount of seconds since the start of the current day
+function SecsSinceMidnight()
+{
+	let now = new Date();
+	let today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	return (now - today) / 1000;
+}
+
 
 export default class App extends React.Component
 {
@@ -31,7 +132,7 @@ export default class App extends React.Component
 			modalStack: new LinkedList() //linked list of Modals for use in ModalNode
 		}
 
-		this.timePeriod = {start: Date.now(), end: Date.now() + 1 * 12 * 1000}
+		this.listPeriod = new TimePeriod(TimeFromSecs(0), new Time(11, 59, "PM"));
 
 		this.timeMarkerInterval = setInterval(this.timeMarkerUpdate, 1000);
 	}
@@ -42,7 +143,10 @@ export default class App extends React.Component
 
 	componentDidMount()
 	{
-		this.setState({tasks: [{length:2}, {length:1}, {length:6}, {length:3}] });
+		this.setState({ tasks: [
+			new TimePeriod(TimeFromSecs(0), new Time(8, 0, "AM")),
+			new TimePeriod(new Time(12, 0, "PM"), new Time(8, 0, "PM"))
+		] });
 	}
 
 	//called upon rendering task list
@@ -51,22 +155,28 @@ export default class App extends React.Component
 	}
 
 	timeMarkerUpdate = () => {
-		let timeMarkerPos = this.state.listHeight * ((Date.now() - this.timePeriod.start) / (this.timePeriod.end - this.timePeriod.start));
+		let timeMarkerPos = this.state.listHeight * (SecsSinceMidnight() - this.listPeriod.start) / this.listPeriod;
 		timeMarkerPos = Math.max(0, Math.min(this.state.listHeight, timeMarkerPos));
 		this.setState({ timeMarkerPos: timeMarkerPos });
 	}
 
-	taskRender = ({item}) => {
-		//get sum of all task lengths
-		const total = this.state.tasks.reduce((sum, task) => sum + task.length, 0);
-
+	taskRender = ({item, index}) => {
 		let taskStyle = styles.task;
 		if(this.state.listHeight != 0)
-			taskStyle = {...taskStyle, height: (item.length / total) * this.state.listHeight };
+		{
+			let secsToNext = 0;
+			if(index < this.state.tasks.length - 1)
+				secsToNext = this.state.tasks[index + 1].start - item.end;
+
+			taskStyle = {...taskStyle, 
+				height: (item.length / this.listPeriod.length) * this.state.listHeight,
+				marginBottom: (secsToNext / this.listPeriod.length) * this.state.listHeight
+			};
+		}
 
 		return (
 			<View style = {taskStyle}>
-				<Text>{`${item.length}`}</Text>
+				<Text>{String(item)}</Text>
 			</View>
 		)
 	}
@@ -90,54 +200,49 @@ export default class App extends React.Component
 	
 	newTaskModal = new Modal({
 		content: (actions) => {
-			const [startTime, setStartTime] = React.useState({hour:"9", minute:"00", ampm:"AM"});
-			const [endTime, setEndTime] = React.useState({hour:"5", minute:"00", ampm:"PM"});
+			const [startTime, setStartTime] = React.useState(new Time(9, 0, "AM"));
+			const [endTime, setEndTime] = React.useState(new Time(5, 0, "PM"));
 			return ( this.darkBackground(
 				<View style={{width:250, height:200, padding:32, backgroundColor:"white", borderRadius:20, gap:16}}>
 					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setStartTime, inputs: startTime })}) } }>
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setStartTime, inputs: {time: startTime} })}) } }>
 						<Text>Start time: </Text>
-						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!startTime ? "--:--" : `${startTime.hour}:${startTime.minute} ${startTime.ampm}`}</Text></View>
+						<View style={{borderWidth:1, borderColor:"black"}}><Text>{startTime.toString()}</Text></View>
 					</TouchableOpacity>
 					<TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setEndTime, inputs: endTime })}) } }>
+							this.setState({modalStack: this.state.modalStack.push({ ...this.timePickerModal, listener: setEndTime, inputs: {time: endTime} })}) } }>
 						<Text>End time: </Text>
-						<View style={{borderWidth:1, borderColor:"black"}}><Text>{!endTime ? "--:--" : `${endTime.hour}:${endTime.minute} ${endTime.ampm}`}</Text></View>
+						<View style={{borderWidth:1, borderColor:"black"}}><Text>{endTime.toString()}</Text></View>
 					</TouchableOpacity>
+					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={ () => {
+						actions.complete({timePeriod: new TimePeriod(startTime, endTime)});
+					} }/>
 				</View>
 			) )
+		},
+		onComplete: (result) => {
+			this.defaultModal.onComplete();
+			this.setState({ tasks: this.state.tasks.concat(result.timePeriod) });
 		}
 	}, this.defaultModal);
-
-	formatNumString = (value, min, max, pad = false) => {
-		let num = parseInt(value);
-		if(isNaN(num) || num < min)
-			num = min;
-		else if(num > max)
-			num = max;
-		return !pad ? String(num) : String(num).padStart(2, '0');
-	};
 
 	//modal for picking a time of the day
 	timePickerModal = new Modal({
 		content: (actions, inputs) => {
-			const [hour, setHour] = React.useState(inputs.hour);
-			const [minute, setMinute] = React.useState(inputs.minute);
-			const [ampm, setAmpm] = React.useState(inputs.ampm);
-			const formatHour = () => { return this.formatNumString(hour, 1, 12) };
-			const formatMinute = () => { return this.formatNumString(minute, 0, 59, true) };
-			const formatAmpm = () => { return ampm.toLowerCase() == "pm" ? "PM" : "AM" };
+			const [hour, setHour] = React.useState(String(inputs.time.hour));
+			const [minute, setMinute] = React.useState(String(inputs.time.minute));
+			const [ampm, setAmpm] = React.useState(String(inputs.time.ampm));
 			return (
 				<View style={{top:-200, backgroundColor:"white", borderRadius:10, padding:10, gap:10}}>
 					<View style={{flexDirection:"row", alignItems:"center"}}>
-						<TextInput style={{width:25}} value={hour} onBlur={ ()=>{setHour(formatHour())} } maxLength={2} keyboardType="numeric" onChangeText={setHour}/>
+						<TextInput style={{width:25}} value={hour} onBlur={ ()=>{setHour(String(new Hour(hour)))} } maxLength={2} keyboardType="numeric" onChangeText={setHour}/>
 						<Text>:</Text>
-						<TextInput style={{width:25}} value={minute} onBlur={ ()=>{setMinute(formatMinute())} } maxLength={2} keyboardType="numeric" onChangeText={setMinute}/>
+						<TextInput style={{width:25}} value={minute} onBlur={ ()=>{setMinute(String(new Minute(minute)))} } maxLength={2} keyboardType="numeric" onChangeText={setMinute}/>
 						<Text> </Text>
-						<TextInput style={{width:30}} value={ampm} onBlur={ ()=>{setAmpm(formatAmpm())} } maxLength={2} onChangeText={setAmpm}/>
+						<TextInput style={{width:30}} value={ampm} onBlur={ ()=>{setAmpm(String(new Ampm(ampm)))} } maxLength={2} onChangeText={setAmpm}/>
 					</View>
 					<CoolFreakingButton title="submit" style={{backgroundColor:"skyblue", borderRadius:10}} onPress={ () => {
-						actions.complete({hour: formatHour(), minute: formatMinute(), ampm: formatAmpm()})
+						actions.complete(new Time(hour, minute, ampm));
 					} }/>
 				</View>
 			)
