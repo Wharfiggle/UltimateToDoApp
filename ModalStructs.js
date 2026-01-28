@@ -1,6 +1,6 @@
 import React from "react";
-import { Hour, Minute, Ampm, Time, TimeFromSecs, TimePeriod, SecsSinceMidnight } from "./TimeStructs.js";
 import { StyleSheet, Text, View, TouchableOpacity, TextInput } from "react-native";
+import { Hour, Minute, Ampm, Time, TimeFromSecs, TimePeriod, SecsSinceMidnight } from "./TimeStructs.js";
 import CoolFreakingButton from "./CoolFreakingButton.js";
 
 //class used to help with structuring Modal data sets for use in ModalNodes
@@ -40,7 +40,7 @@ export function defaultModal(setState, getState)
 }
 
 //modal for creating a new task
-export function newTask(setState, getState)
+export function newTaskModal(setState, getState)
 {
     return new Modal({
         content: (actions) => {
@@ -49,12 +49,12 @@ export function newTask(setState, getState)
             return ( darkBackground(
                 <View style={{width:250, height:200, padding:32, backgroundColor:"white", borderRadius:20, gap:16}}>
                     <TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-                            setState({modalStack: getState().modalStack.push({ ...timePicker(setState, getState), listener: setStartTime, inputs: {time: startTime} })}) } }>
+                            setState({modalStack: getState().modalStack.push({ ...timePickerModal(setState, getState), listener: setStartTime, inputs: {time: startTime} })}) } }>
                         <Text>Start time: </Text>
                         <View style={{borderWidth:1, borderColor:"black"}}><Text>{startTime.toString()}</Text></View>
                     </TouchableOpacity>
                     <TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
-                            setState({modalStack: getState().modalStack.push({ ...timePicker(setState, getState), listener: setEndTime, inputs: {time: endTime} })}) } }>
+                            setState({modalStack: getState().modalStack.push({ ...timePickerModal(setState, getState), listener: setEndTime, inputs: {time: endTime} })}) } }>
                         <Text>End time: </Text>
                         <View style={{borderWidth:1, borderColor:"black"}}><Text>{endTime.toString()}</Text></View>
                     </TouchableOpacity>
@@ -72,7 +72,7 @@ export function newTask(setState, getState)
 }
 
 //modal for picking a time of the day
-export function timePicker(setState, getState)
+export function timePickerModal(setState, getState)
 {
     return new Modal({
         content: (actions, inputs) => {

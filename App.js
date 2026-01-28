@@ -1,11 +1,11 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, FlatList, View, TouchableOpacity, TextInput } from "react-native";
+import { StyleSheet, Text, FlatList, View } from "react-native";
 import CoolFreakingButton from "./CoolFreakingButton.js";
 import ModalNode from "./ModalNode.js";
 import React from "react";
 import LinkedList from "./LinkedList.js";
 import { Hour, Minute, Ampm, Time, TimeFromSecs, TimePeriod, SecsSinceMidnight } from "./TimeStructs.js";
-import { newTask, timePicker, Modal, defaultModal, darkBackground } from "./ModalStructs.js";
+import * as ModalStructs from "./ModalStructs.js";
 
 
 export default class App extends React.Component
@@ -70,8 +70,8 @@ export default class App extends React.Component
 		)
 	}
 
-	newTaskModal = newTask(this.setState.bind(this), () => this.state);
-	timePickerModal = timePicker(this.setState.bind(this), () => this.state);
+	newTaskModal = ModalStructs.newTaskModal(this.setState.bind(this), () => this.state);
+	timePickerModal = ModalStructs.timePickerModal(this.setState.bind(this), () => this.state);
 
 	render()
 	{
