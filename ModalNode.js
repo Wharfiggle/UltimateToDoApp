@@ -8,7 +8,7 @@ const complete = (result, node) => {
     node.value.listener?.(result);
 }
 const cancel = (node) => {
-    node.value.cancel?.();
+    node.value.onCancel?.();
 }
 
 export default function ModalNode({

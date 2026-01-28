@@ -48,6 +48,10 @@ export function newTaskModal(setState, getState)
             const [endTime, setEndTime] = React.useState(new Time(5, 0, "PM"));
             return ( darkBackground(
                 <View style={{width:250, height:200, padding:32, backgroundColor:"white", borderRadius:20, gap:16}}>
+                    <View style={{flexDirection:"row", right:-32, top:-32, marginBottom:-32}}>
+                        <View style={{flex: 1}}></View>
+                        <CoolFreakingButton icon="close-thick" contentStyle={{fontSize:20, color:"skyblue"}} onPress={ ()=>{actions.cancel()} }/>
+                    </View>
                     <TouchableOpacity style={{flexDirection:"row"}} onPress={ ()=>{
                             setState({modalStack: getState().modalStack.push({ ...timePickerModal(setState, getState), listener: setStartTime, inputs: {time: startTime} })}) } }>
                         <Text>Start time: </Text>
