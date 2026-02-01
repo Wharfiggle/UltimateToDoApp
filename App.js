@@ -18,10 +18,9 @@ export default class App extends React.Component
 			tasks: [],
 			listHeight: 0,
 			timeMarkerPos: 0,
-			modalStack: new LinkedList() //linked list of Modals for use in ModalNode
+			modalStack: new LinkedList(), //linked list of Modals for use in ModalNode
+			listPeriod: new TimePeriod(TimeFromSecs(0), new Time(11, 59, "PM"))
 		}
-
-		this.listPeriod = new TimePeriod(TimeFromSecs(0), new Time(11, 59, "PM"));
 
 		this.timeMarkerInterval = setInterval(this.timeMarkerUpdate, 1000);
 	}
@@ -44,27 +43,19 @@ export default class App extends React.Component
 	}
 
 	timeMarkerUpdate = () => {
-		let timeMarkerPos = this.state.listHeight * (SecsSinceMidnight() - this.listPeriod.start) / this.listPeriod;
+		let timeMarkerPos = this.state.listHeight * (SecsSinceMidnight() - this.state.listPeriod.start) / this.state.listPeriod;
 		timeMarkerPos = Math.max(0, Math.min(this.state.listHeight, timeMarkerPos));
 		this.setState({ timeMarkerPos: timeMarkerPos });
 	}
 
-	taskRender = ({item, index}) => {
-		let taskStyle = styles.task;
-		if(this.state.listHeight != 0)
-		{
-			let secsToNext = 0;
-			if(index < this.state.tasks.length - 1)
-				secsToNext = this.state.tasks[index + 1].start - item.end;
-
-			taskStyle = {...taskStyle, 
-				height: (item.length / this.listPeriod.length) * this.state.listHeight,
-				marginBottom: (secsToNext / this.listPeriod.length) * this.state.listHeight
-			};
-		}
+	taskRender = (item, index) => {
+		let taskStyle = (this.state.listHeight == 0) ? styles.task : { ...styles.task, 
+			height: (item.length / this.state.listPeriod.length) * this.state.listHeight,
+			top: (item.start - this.state.listPeriod.start) * (this.state.listHeight / this.state.listPeriod)
+		};
 
 		return (
-			<View style = {taskStyle}>
+			<View style={taskStyle} key={index}>
 				<Text>{String(item)}</Text>
 			</View>
 		)
@@ -79,13 +70,8 @@ export default class App extends React.Component
 			<View style={styles.container}>
 				<View style={styles.subcontainer}>
 					<StatusBar/>
-					<View style={{flex:1, borderWidth:2, borderColor:"black"}} onLayout={this.handleListLayout}>
-						<FlatList
-							data={this.state.tasks}
-							renderItem={this.taskRender}
-							keyExtractor={(item, index) => index}
-							ItemSeparatorComponent={(<View style={{height:1, backgroundColor:"black"}}></View>)}
-						/>
+					<View style={{flex:1, borderWidth:1, width:"100%", borderColor:"white"}} onLayout={this.handleListLayout}>
+						{ this.state.tasks.map( (item, index) => (this.taskRender(item, index)) ) }
 						<View style={{position:"absolute", width: 100, top: this.state.timeMarkerPos - 1, height:2, backgroundColor:"red"}}></View>
 					</View>
 					<CoolFreakingButton iconAwesome="plus" contentStyle={{fontSize:24}} style={{height:50, width:50, borderRadius:50, borderWidth:2}} 
@@ -113,7 +99,8 @@ const styles = StyleSheet.create({
 		gap: 16
 	},
 	task:{
-		width:300,
+		position: "absolute",
+		width: "100%",
 		backgroundColor:"white",
 		justifyContent:"center",
 		alignItems:"center"
